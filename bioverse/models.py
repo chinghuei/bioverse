@@ -1,3 +1,5 @@
+"""Model loading and architecture components used in Bioverse."""
+
 import torch
 import torch.nn as nn
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -8,6 +10,8 @@ from .constants import num_bio_tokens
 
 
 def loadMammal(model_path, device):
+    """Load the MAMMAL encoder model and tokenizer."""
+
     mammal_model = Mammal.from_pretrained(model_path).eval().to(device)
     mammal_tokenizer = ModularTokenizerOp.from_pretrained(model_path)
     for p in mammal_model.parameters():
@@ -16,6 +20,8 @@ def loadMammal(model_path, device):
 
 
 def loadLLM(model_path, device, use_lora=True):
+    """Load the base language model and optionally apply LoRA adapters."""
+
     llm_model = AutoModelForCausalLM.from_pretrained(model_path).to(device)
     llm_tokenizer = AutoTokenizer.from_pretrained(model_path)
     if use_lora:
@@ -35,12 +41,16 @@ def loadLLM(model_path, device, use_lora=True):
 
 
 class TrainableBIO(nn.Module):
+    """Simple module containing a single trainable embedding vector."""
+
     def __init__(self, dim):
         super().__init__()
         self.embedding = nn.Parameter(torch.randn(dim))
 
 
 class BioToTextProjectionLayer(nn.Module):
+    """Project MAMMAL embeddings into the LLM embedding space."""
+
     def __init__(self, input_dim=768, hidden_dim=1024, target_dim=2048, num_tokens=4):
         super().__init__()
         self.num_tokens = num_tokens
@@ -53,4 +63,5 @@ class BioToTextProjectionLayer(nn.Module):
     def forward(self, x):
         if x.ndim == 2:
             x = x.unsqueeze(1)
+        # ``self.proj`` processes each token embedding independently
         return self.proj(x)

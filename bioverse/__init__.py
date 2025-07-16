@@ -1,3 +1,9 @@
+"""Convenience re-exports for the Bioverse package.
+
+This module exposes the most commonly used classes and functions at the package
+level so they can be imported directly from :mod:`bioverse`.
+"""
+
 from .constants import (
     num_bio_tokens,
     bio_token_list,
