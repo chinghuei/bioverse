@@ -62,6 +62,7 @@ class BioToTextProjectionLayer(nn.Module):
 
     def forward(self, x):
         if x.ndim == 2:
-            x = x.unsqueeze(1)
+            # When a single sample is provided, add a batch dimension
+            x = x.unsqueeze(0)
         # ``self.proj`` processes each token embedding independently
         return self.proj(x)
