@@ -1,3 +1,5 @@
+"""Utilities for evaluating a trained Bioverse model."""
+
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 from tqdm import tqdm
 from clearml import Logger, Task
@@ -16,14 +18,20 @@ def evaluate_model(
     logger: Logger,
     task: Task,
 ):
+    """Evaluate the model on a labeled dataset and report metrics."""
+
     projection_layer.eval()
     llm_model.eval()
     preds, truths = [], []
-    tokenizer.padding_side = "left"
+    tokenizer.padding_side = "left"  # generation models expect left padding
     trainable_bio_token_embedding = trainable_bio_module.embedding
     with torch.no_grad():
-        for batch_idx, (bio_embeddings, labels) in enumerate(tqdm(dataloader, desc="Evaluating")):
+        # Iterate over the dataset and generate predictions
+        for batch_idx, (bio_embeddings, labels) in enumerate(
+            tqdm(dataloader, desc="Evaluating")
+        ):
             with autocast(device_type=device.type):
+                # Inject the biological embeddings into the prompt
                 input_ids, input_embeds, attention_mask = inject_and_tokenize(
                     llm_model,
                     tokenizer,
@@ -42,13 +50,20 @@ def evaluate_model(
                     eos_token_id=tokenizer.eos_token_id,
                     do_sample=False,
                 )
+            # Convert generated token IDs back to text and normalise
             decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
             decoded_preds = [p.strip().lower() for p in decoded]
             decoded_truths = [t.strip().lower() for t in labels]
+
+            # Print each prediction alongside its ground truth label
             for i, (pred, true) in enumerate(zip(decoded_preds, decoded_truths)):
-                print(f"[{batch_idx * dataloader.batch_size + i + 1}] pred: {pred:<30} | truth: {true}")
+                print(
+                    f"[{batch_idx * dataloader.batch_size + i + 1}] pred: {pred:<30} | truth: {true}"
+                )
+
             preds.extend(decoded_preds)
             truths.extend(decoded_truths)
+    # Aggregate predictions to compute overall metrics
     acc = accuracy_score(truths, preds)
     macro_f1 = f1_score(truths, preds, average="macro", zero_division=0)
     print("\nFinal Evaluation Metrics:")
