@@ -1,1 +1,0 @@
-# MammalEncoder and ScRNASeqEncoder
