@@ -25,7 +25,7 @@ from .data import (
     AnnDatasetWithBioEmbedding,
     split_dataset,
 )
-from .training import train_model
+from .training import train_model, align_model
 from .evaluation import evaluate_model
 from .inference import run_inference
 from .utils import save_trained_models, loadSavedModels
@@ -47,6 +47,7 @@ __all__ = [
     "AnnDatasetWithBioEmbedding",
     "split_dataset",
     "train_model",
+    "align_model",
     "evaluate_model",
     "run_inference",
     "save_trained_models",
