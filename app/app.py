@@ -1,6 +1,7 @@
 """Dash app demonstrating scRNA‑seq + LLM integration via Langflow."""
 
 from pathlib import Path
+import json
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
@@ -37,11 +38,18 @@ app.layout = html.Div([
 # --- Load Langflow workflow
 FLOW_PATH = Path(__file__).parent / "flow.json"
 flow = None
+PREDICT_URL = "http://localhost:8000/predict"
 if FLOW_PATH.exists():
-    flow = load_flow_from_json(str(FLOW_PATH), build=False)
+    try:
+        flow_json = json.loads(FLOW_PATH.read_text())
+        if "config" in flow_json and "endpoint" in flow_json["config"]:
+            PREDICT_URL = flow_json["config"]["endpoint"]
+        if "data" in flow_json:
+            flow = load_flow_from_json(str(FLOW_PATH), build=False)
+    except Exception:
+        pass
 
 # --- Langflow query handler
-PREDICT_URL = "http://localhost:8000/predict"
 
 
 def query_langflow(cell_indices: List[int], question: str) -> str:
