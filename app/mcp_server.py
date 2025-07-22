@@ -1,4 +1,13 @@
 from pathlib import Path
+"""Minimal FastAPI inference server for Bioverse models.
+
+The server exposes a single ``/predict`` endpoint which takes a list of cell
+indices and a question string. It loads a toy PBMC dataset and all model
+artifacts once at startup so that incoming requests only need to run the
+forward pass. This keeps latency low and avoids repeated initialisation.
+"""
+
+from pathlib import Path
 from typing import List
 
 import numpy as np
@@ -20,17 +29,24 @@ from bioverse import (
     bio_token_list,
 )
 
+# Create the FastAPI application
 app = FastAPI()
 
-# Load dataset and models once at startup
+# ---------------------------------------------------------------------------
+# Data and model initialisation
+# ---------------------------------------------------------------------------
+# The example PBMC dataset is loaded only once when the server starts.
+# This keeps the predict endpoint lightweight and avoids disk I/O on each call.
 adata = sc.datasets.pbmc68k_reduced()
 if "X_umap" not in adata.obsm:
     sc.pp.neighbors(adata)
     sc.tl.umap(adata)
 
+# Use GPU if available; otherwise fall back to CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Adjust the checkpoint path as needed
+# Load the trained model components from the checkpoints folder. If files are
+# missing we simply disable prediction instead of failing at startup.
 try:
     llm_model, tokenizer, adapter, trainable_bio = loadSavedModels(
         Path("checkpoints/final_model"), device
@@ -52,16 +68,23 @@ class PredictRequest(BaseModel):
 
 @app.post("/predict")
 def predict(req: PredictRequest):
+    """Return model predictions for the selected cell indices."""
+    # If any component failed to load we gracefully return an empty list.
     if any(v is None for v in [llm_model, adapter, tokenizer, trainable_bio, encoder]):
         return {"predictions": []}
+
     preds = []
     for idx in req.cells:
+        # Convert the expression profile of the requested cell into a fixed
+        # size embedding using the MAMMAL encoder.
         expr = (
             adata.X[idx].toarray().flatten()
             if hasattr(adata.X[idx], "toarray")
             else adata.X[idx]
         )
         embedding = encoder.get_cell_embedding(adata.var_names.tolist(), expr)
+
+        # Build the full prompt and run inference through the language model.
         prompt = f"{req.question} {BIO_TOKENS} {ANSWER_TOKEN}"
         pred = run_inference(
             llm_model,
@@ -73,6 +96,7 @@ def predict(req: PredictRequest):
             device,
         )
         preds.append(pred)
+
     return {"predictions": preds}
 
 
