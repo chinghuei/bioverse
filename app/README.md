@@ -13,10 +13,18 @@ Install the required packages:
 pip install -r requirements.txt
 ```
 
-Then start the app:
+To launch the stand-alone Dash demo run:
 
 ```bash
 python app.py
+```
+
+### Running inside Langflow
+
+To start Langflow with the single-cell browser mounted under `/cells` run:
+
+```bash
+python langflow_server.py
 ```
 
 A browser window will open showing the UMAP projection of the example dataset.

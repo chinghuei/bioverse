@@ -2,3 +2,4 @@ langflow
 scanpy
 plotly
 dash
+uvicorn
