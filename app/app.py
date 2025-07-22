@@ -1,64 +1,51 @@
-"""Dash app demonstrating scRNA-seq + LLM integration via Langflow."""
+"""Dash app demonstrating scRNA‑seq + LLM integration via Langflow."""
 
 from pathlib import Path
-
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.express as px
 import scanpy as sc
-
-from langflow import load_flow
-
 import numpy as np
 
+# ✅ Updated import based on current Langflow structure
+from langflow.load import load_flow_from_json
 
-
-# Load a toy scRNA-seq dataset
+# --- Load toy scRNA‑seq dataset
 adata = sc.datasets.pbmc68k_reduced()
-
-# Ensure we have 2D coordinates for plotting
 if "X_umap" not in adata.obsm:
     sc.pp.neighbors(adata)
     sc.tl.umap(adata)
-
 umap = adata.obsm["X_umap"]
 
-# Plotly figure for cell selection
+# --- Plotly figure
 fig = px.scatter(x=umap[:, 0], y=umap[:, 1], hover_name=adata.obs_names)
 
+# --- Dash app setup
 app = dash.Dash(__name__)
+app.layout = html.Div([
+    html.H2("Bioverse scRNA‑seq + Langflow Demo"),
+    dcc.Graph(id="cell-plot", figure=fig),
+    dcc.Input(id="question", type="text", placeholder="Ask a question"),
+    html.Button("Submit", id="submit"),
+    html.Div(id="answer"),
+])
 
-app.layout = html.Div(
-    [
-        html.H2("Bioverse scRNA-seq Demo"),
-        dcc.Graph(id="cell-plot", figure=fig),
-        dcc.Input(id="question", type="text", placeholder="Ask a question"),
-        html.Button("Submit", id="submit"),
-        html.Div(id="answer"),
-    ]
-)
-
-
-# Langflow workflow used for LLM inference
+# --- Load Langflow workflow
 FLOW_PATH = Path(__file__).parent / "flow.json"
-flow = load_flow(FLOW_PATH) if FLOW_PATH.exists() else None
+flow = None
+if FLOW_PATH.exists():
+    flow = load_flow_from_json(str(FLOW_PATH), build=False)
 
-
+# --- Langflow query handler
 def query_langflow(cell_idx: int, question: str) -> str:
-    """Run the Langflow workflow with the given cell and question."""
     expr = np.asarray(adata[cell_idx].X).flatten().tolist()
-    # For a full demo you would convert the expression into an embedding using
-    # ``MammalEncoder`` or another encoder from ``bioverse``. Here the raw
-    # expression vector is passed directly.
-    cell_embed = expr
-
-    prompt = {"cell_embedding": cell_embed, "question": question}
+    prompt = {"cell_embedding": expr, "question": question}
     if flow:
         return flow(prompt)
     return "[Langflow workflow missing]"
 
-
+# --- Callback for question handling
 @app.callback(
     Output("answer", "children"),
     Input("submit", "n_clicks"),
@@ -70,10 +57,9 @@ def on_submit(n_clicks, click_data, question):
         return ""
     if not click_data:
         return "Please select a cell on the scatter plot."
-    cell_idx = click_data["points"][0]["pointIndex"]
-    answer = query_langflow(cell_idx, question or "")
-    return answer
+    idx = click_data["points"][0]["pointIndex"]
+    return query_langflow(idx, question or "")
 
-
+# --- Run the Dash server (✅ updated method)
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(debug=True, port=8051)
