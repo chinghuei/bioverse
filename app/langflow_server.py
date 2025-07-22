@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 import dash
 from dash import dcc, html
@@ -12,8 +13,23 @@ from fastapi.middleware.wsgi import WSGIMiddleware
 
 try:
     from langflow.main import setup_app
+    from langflow.load import load_flow_from_json
 except Exception as e:  # pragma: no cover - optional langflow
     setup_app = None
+    load_flow_from_json = None
+
+FLOW_PATH = Path(__file__).parent / "flow.json"
+flow = None
+PREDICT_URL = "http://localhost:8000/predict"
+if FLOW_PATH.exists():
+    try:
+        flow_json = json.loads(FLOW_PATH.read_text())
+        if "config" in flow_json and "endpoint" in flow_json["config"]:
+            PREDICT_URL = flow_json["config"]["endpoint"]
+        if "data" in flow_json and load_flow_from_json is not None:
+            flow = load_flow_from_json(str(FLOW_PATH), build=False)
+    except Exception:
+        pass
 
 
 def create_dash_app() -> dash.Dash:
@@ -50,8 +66,13 @@ def create_dash_app() -> dash.Dash:
             return "Please select at least one cell on the scatter plot."
         indices = [p["pointIndex"] for p in selected_data["points"]]
         payload = {"cells": indices, "question": question or ""}
+        if flow:
+            try:
+                return flow(payload)
+            except Exception:
+                pass
         try:
-            resp = requests.post("http://localhost:8000/predict", json=payload, timeout=30)
+            resp = requests.post(PREDICT_URL, json=payload, timeout=30)
             if resp.status_code == 200:
                 preds = resp.json().get("predictions", [])
                 return "; ".join(preds)

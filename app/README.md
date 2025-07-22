@@ -6,6 +6,12 @@ Users can select one or more cells using the lasso tool on the scatter plot,
 provide a question and obtain cell type predictions via the Langflow workflow
 or the built in prediction server.
 
+The application reads a `flow.json` file from this directory. If the JSON
+contains a `data` field the corresponding Langflow workflow is loaded. When the
+file only includes a `config` section with an `endpoint`, the app skips loading
+the workflow and forwards requests to that MCP endpoint (default
+`http://localhost:8000/predict`).
+
 ## Running
 
 Install the required packages:
