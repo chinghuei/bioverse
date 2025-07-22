@@ -3,6 +3,8 @@ from pathlib import Path
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
+import requests
+from typing import List
 import plotly.express as px
 import scanpy as sc
 import numpy as np
@@ -22,6 +24,7 @@ def create_dash_app() -> dash.Dash:
         sc.tl.umap(adata)
     umap = adata.obsm["X_umap"]
     fig = px.scatter(x=umap[:, 0], y=umap[:, 1], hover_name=adata.obs_names)
+    fig.update_layout(dragmode="lasso")
 
     dash_app = dash.Dash(__name__, requests_pathname_prefix="/cells/")
     dash_app.layout = html.Div(
@@ -37,18 +40,24 @@ def create_dash_app() -> dash.Dash:
     @dash_app.callback(
         Output("answer", "children"),
         Input("submit", "n_clicks"),
-        Input("cell-plot", "clickData"),
+        Input("cell-plot", "selectedData"),
         Input("question", "value"),
     )
-    def on_submit(n_clicks, click_data, question):  # pragma: no cover - UI logic
+    def on_submit(n_clicks, selected_data, question):  # pragma: no cover - UI logic
         if not n_clicks:
             return ""
-        if not click_data:
-            return "Please select a cell on the scatter plot."
-        cell_idx = click_data["points"][0]["pointIndex"]
-        expr = np.asarray(adata[cell_idx].X).flatten().tolist()
-        prompt = {"cell_embedding": expr, "question": question or ""}
-        return str(prompt)
+        if not selected_data or not selected_data.get("points"):
+            return "Please select at least one cell on the scatter plot."
+        indices = [p["pointIndex"] for p in selected_data["points"]]
+        payload = {"cells": indices, "question": question or ""}
+        try:
+            resp = requests.post("http://localhost:8000/predict", json=payload, timeout=30)
+            if resp.status_code == 200:
+                preds = resp.json().get("predictions", [])
+                return "; ".join(preds)
+        except Exception as exc:
+            return f"[Prediction error: {exc}]"
+        return "[No response]"
 
     return dash_app
 
@@ -67,3 +76,4 @@ if __name__ == "__main__":  # pragma: no cover - manual start
     import uvicorn
 
     uvicorn.run(create_combined_app(), host="0.0.0.0", port=7860)
+

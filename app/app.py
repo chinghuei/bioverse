@@ -4,6 +4,8 @@ from pathlib import Path
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
+import requests
+from typing import List
 import plotly.express as px
 import scanpy as sc
 import numpy as np
@@ -20,6 +22,7 @@ umap = adata.obsm["X_umap"]
 
 # --- Plotly figure
 fig = px.scatter(x=umap[:, 0], y=umap[:, 1], hover_name=adata.obs_names)
+fig.update_layout(dragmode="lasso")
 
 # --- Dash app setup
 app = dash.Dash(__name__)
@@ -38,27 +41,39 @@ if FLOW_PATH.exists():
     flow = load_flow_from_json(str(FLOW_PATH), build=False)
 
 # --- Langflow query handler
-def query_langflow(cell_idx: int, question: str) -> str:
-    expr = np.asarray(adata[cell_idx].X).flatten().tolist()
-    prompt = {"cell_embedding": expr, "question": question}
+PREDICT_URL = "http://localhost:8000/predict"
+
+
+def query_langflow(cell_indices: List[int], question: str) -> str:
+    payload = {"cells": cell_indices, "question": question}
     if flow:
-        return flow(prompt)
+        try:
+            return flow(payload)
+        except Exception:
+            pass
+    try:
+        resp = requests.post(PREDICT_URL, json=payload, timeout=30)
+        if resp.status_code == 200:
+            result = resp.json().get("predictions", [])
+            return "; ".join(result)
+    except Exception as exc:
+        return f"[Prediction error: {exc}]"
     return "[Langflow workflow missing]"
 
 # --- Callback for question handling
 @app.callback(
     Output("answer", "children"),
     Input("submit", "n_clicks"),
-    Input("cell-plot", "clickData"),
+    Input("cell-plot", "selectedData"),
     Input("question", "value"),
 )
-def on_submit(n_clicks, click_data, question):
+def on_submit(n_clicks, selected_data, question):
     if not n_clicks:
         return ""
-    if not click_data:
-        return "Please select a cell on the scatter plot."
-    idx = click_data["points"][0]["pointIndex"]
-    return query_langflow(idx, question or "")
+    if not selected_data or not selected_data.get("points"):
+        return "Please select at least one cell on the scatter plot."
+    indices = [p["pointIndex"] for p in selected_data["points"]]
+    return query_langflow(indices, question or "")
 
 # --- Run the Dash server (✅ updated method)
 if __name__ == "__main__":
