@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from pathlib import Path
+import argparse
 import torch
 from clearml import Task, Logger
 from torch.utils.data import DataLoader
@@ -28,6 +29,15 @@ from bioverse import (
 
 def main():
     """Train the LLM on scRNA-seq embeddings."""
+
+    parser = argparse.ArgumentParser(description="Train Bioverse models")
+    parser.add_argument(
+        "--data",
+        type=str,
+        default="/dccstor/bmfm-targets/data/omics/transcriptome/scRNA/finetune/batch_effect/human_pbmc/h5ad/standardized.h5ad",
+        help="Path to an AnnData .h5ad file",
+    )
+    args = parser.parse_args()
 
     # Hyperparameters
     use_lora = True
@@ -77,15 +87,9 @@ def main():
     llm_model.resize_token_embeddings(len(llm_tokenizer))
     b2t_projection_layer = BioToTextProjectionLayer(num_tokens=num_bio_tokens).to(device)
 
-    # Load the training data from disk. A subset of the PBMC dataset is used
-    # here purely as an example but any AnnData file could be provided.
-    remote_root_data_path = (
-        '/dccstor/bmfm-targets/data/omics/transcriptome/scRNA/finetune/'
-    )
-    h5ad_path = (
-        remote_root_data_path + '/batch_effect/human_pbmc/h5ad/standardized.h5ad'
-    )
-    adata = load_AnnData_from_file(h5ad_path, use_subset=False)
+    # Load the training data from disk. ``args.data`` can be used to override
+    # the default PBMC dataset path.
+    adata = load_AnnData_from_file(args.data, use_subset=False)
 
     # Convert gene expression values into embeddings using the MAMMAL encoder
     mammal_encoder = MammalEncoder(

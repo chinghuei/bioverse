@@ -7,6 +7,7 @@ It is primarily meant for quick qualitative checks of the model output.
 
 from datetime import datetime
 from pathlib import Path
+import argparse
 import random
 import torch
 from clearml import Task, Logger
@@ -34,6 +35,15 @@ from bioverse import (
 
 def main():
     """Entry point for running ad-hoc inference."""
+
+    parser = argparse.ArgumentParser(description="Run inference with Bioverse")
+    parser.add_argument(
+        "--data",
+        type=str,
+        default="/dccstor/bmfm-targets/data/omics/transcriptome/scRNA/finetune/batch_effect/human_pbmc/h5ad/standardized.h5ad",
+        help="Path to an AnnData .h5ad file",
+    )
+    args = parser.parse_args()
 
     # Folder that stores the trained model checkpoints
     checkpoint_dir = Path("checkpoints")
@@ -65,14 +75,8 @@ def main():
         trainable_bio_module,
     ) = loadSavedModels(save_model_dir, device)
 
-    # Load the evaluation data. Here a standardised PBMC dataset is used.
-    remote_root_data_path = (
-        '/dccstor/bmfm-targets/data/omics/transcriptome/scRNA/finetune/'
-    )
-    h5ad_path = (
-        remote_root_data_path + '/batch_effect/human_pbmc/h5ad/standardized.h5ad'
-    )
-    adata = load_AnnData_from_file(h5ad_path, use_subset=False)
+    # Load the evaluation data; ``args.data`` allows overriding the default path.
+    adata = load_AnnData_from_file(args.data, use_subset=False)
     # Prepare a dataset that returns a MAMMAL embedding for each cell
     mammal_model, mammal_tokenizer = loadMammal(
         "ibm/biomed.omics.bl.sm.ma-ted-458m", device
