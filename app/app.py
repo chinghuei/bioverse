@@ -9,7 +9,6 @@ import requests
 from typing import List
 import plotly.express as px
 import scanpy as sc
-import numpy as np
 
 # ✅ Updated import based on current Langflow structure
 from langflow.load import load_flow_from_json
@@ -64,6 +63,12 @@ def query_langflow(cell_indices: List[int], question: str) -> str:
         if resp.status_code == 200:
             result = resp.json().get("predictions", [])
             return "; ".join(result)
+        else:
+            try:
+                error_msg = resp.json().get("error")
+            except ValueError:
+                error_msg = resp.text
+            return f"[{error_msg}]"
     except Exception as exc:
         return f"[Prediction error: {exc}]"
     return "[Langflow workflow missing]"

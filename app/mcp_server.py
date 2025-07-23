@@ -10,10 +10,10 @@ forward pass. This keeps latency low and avoids repeated initialisation.
 from pathlib import Path
 from typing import List
 
-import numpy as np
 import torch
 import scanpy as sc
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from bioverse import (
@@ -47,6 +47,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load the trained model components from the checkpoints folder. If files are
 # missing we simply disable prediction instead of failing at startup.
+model_available = True
 try:
     llm_model, tokenizer, adapter, trainable_bio = loadSavedModels(
         Path("checkpoints/final_model"), device
@@ -56,7 +57,9 @@ try:
     )
     encoder = MammalEncoder(mammal_model, mammal_tokenizer, device, num_bio_tokens)
 except Exception as e:  # pragma: no cover - optional model loading
+    print(f"Model loading failed: {e}")
     llm_model = tokenizer = adapter = trainable_bio = encoder = None
+    model_available = False
 
 BIO_TOKENS = f"{BIO_START_TOKEN} {' '.join(bio_token_list)} {TRAINABLE_BIO_TOKEN} {BIO_END_TOKEN}"
 
@@ -69,9 +72,11 @@ class PredictRequest(BaseModel):
 @app.post("/predict")
 def predict(req: PredictRequest):
     """Return model predictions for the selected cell indices."""
-    # If any component failed to load we gracefully return an empty list.
-    if any(v is None for v in [llm_model, adapter, tokenizer, trainable_bio, encoder]):
-        return {"predictions": []}
+    # If model components failed to load return an informative error
+    if not model_available or any(
+        v is None for v in [llm_model, adapter, tokenizer, trainable_bio, encoder]
+    ):
+        return JSONResponse({"error": "Model not loaded"}, status_code=503)
 
     preds = []
     for idx in req.cells:

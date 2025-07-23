@@ -27,8 +27,12 @@ installed.
    while:
 
    ```bash
-   pip install -r app/requirements.txt
+   pip install -r requirements.txt
    ```
+
+   The demo application under `app/` has a separate requirements file that
+   should be installed in addition to the base dependencies when running the
+   web UI.
 
 ## Training a model
 
@@ -36,10 +40,10 @@ installed.
    rate or number of epochs.
 2. Download or provide an AnnData `.h5ad` file compatible with the
    `load_AnnData_from_file` function in `bioverse.data`.
-3. Start training:
+3. Start training (optionally specify the dataset path):
 
    ```bash
-   python train.py
+   python train.py --data path/to/your_dataset.h5ad
    ```
 
    Checkpoints are written to the `checkpoints/` directory. After training the
@@ -50,7 +54,7 @@ installed.
 Once a model has been trained you can compute metrics on a test set:
 
 ```bash
-python evaluate.py
+python evaluate.py --data path/to/your_dataset.h5ad
 ```
 
 Results are printed to the console and logged to ClearML if it is
@@ -59,7 +63,7 @@ configured.
 ## Running ad‑hoc inference
 
 ```bash
-python infer.py
+python infer.py --data path/to/your_dataset.h5ad
 ```
 
 This loads the saved model and prints predictions for a random subset of
@@ -73,13 +77,10 @@ FastAPI server.
 
 ```bash
 cd app
+pip install -r requirements.txt
 python app.py            # launches the Dash front end on port 8051
 python mcp_server.py     # optional: start the FastAPI server on port 8000
 ```
 
 Open <http://localhost:8051> in your browser to interact with the demo.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
 

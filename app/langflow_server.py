@@ -8,7 +8,6 @@ import requests
 from typing import List
 import plotly.express as px
 import scanpy as sc
-import numpy as np
 from fastapi.middleware.wsgi import WSGIMiddleware
 
 try:
