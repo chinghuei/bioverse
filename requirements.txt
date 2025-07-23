@@ -1,0 +1,22 @@
+# Core dependencies
+torch
+transformers
+peft
+clearml
+mammal
+fuse
+scanpy
+scikit-learn
+matplotlib
+numpy
+tqdm
+
+# Web and demo application
+langflow
+dash
+plotly
+fastapi
+pydantic
+requests
+uvicorn
+

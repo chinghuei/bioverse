@@ -27,8 +27,12 @@ installed.
    while:
 
    ```bash
-   pip install -r app/requirements.txt
+   pip install -r requirements.txt
    ```
+
+   The demo application under `app/` has a separate requirements file that
+   should be installed in addition to the base dependencies when running the
+   web UI.
 
 ## Training a model
 
@@ -73,9 +77,11 @@ FastAPI server.
 
 ```bash
 cd app
+pip install -r requirements.txt
 python app.py            # launches the Dash front end on port 8051
 python mcp_server.py     # optional: start the FastAPI server on port 8000
 ```
 
 Open <http://localhost:8051> in your browser to interact with the demo.
+
 
