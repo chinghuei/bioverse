@@ -8,6 +8,7 @@ no parameter updates.
 
 from datetime import datetime
 from pathlib import Path
+import argparse
 import torch
 from clearml import Task, Logger
 from torch.utils.data import DataLoader
@@ -34,6 +35,15 @@ from bioverse import (
 
 def main():
     """Entry point for running model evaluation."""
+
+    parser = argparse.ArgumentParser(description="Evaluate Bioverse models")
+    parser.add_argument(
+        "--data",
+        type=str,
+        default="/dccstor/bmfm-targets/data/omics/transcriptome/scRNA/finetune/batch_effect/human_pbmc/h5ad/standardized.h5ad",
+        help="Path to an AnnData .h5ad file",
+    )
+    args = parser.parse_args()
 
     # Directory containing the trained model artifacts
     checkpoint_dir = Path("checkpoints")
@@ -71,13 +81,8 @@ def main():
     # Path to the annotated data matrix (AnnData) used for evaluation. Only a
     # standardised human PBMC dataset is used here but this could be replaced
     # with any compatible dataset.
-    remote_root_data_path = (
-        '/dccstor/bmfm-targets/data/omics/transcriptome/scRNA/finetune/'
-    )
-    h5ad_path = (
-        remote_root_data_path + '/batch_effect/human_pbmc/h5ad/standardized.h5ad'
-    )
-    adata = load_AnnData_from_file(h5ad_path, use_subset=False)
+    # Load the evaluation data. ``args.data`` can point to any compatible AnnData file.
+    adata = load_AnnData_from_file(args.data, use_subset=False)
     # Load the MAMMAL encoder and create a dataset that yields a MAMMAL
     # embedding for each cell alongside its ground-truth label.
     mammal_model, mammal_tokenizer = loadMammal(

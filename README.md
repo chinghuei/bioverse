@@ -36,10 +36,10 @@ installed.
    rate or number of epochs.
 2. Download or provide an AnnData `.h5ad` file compatible with the
    `load_AnnData_from_file` function in `bioverse.data`.
-3. Start training:
+3. Start training (optionally specify the dataset path):
 
    ```bash
-   python train.py
+   python train.py --data path/to/your_dataset.h5ad
    ```
 
    Checkpoints are written to the `checkpoints/` directory. After training the
@@ -50,7 +50,7 @@ installed.
 Once a model has been trained you can compute metrics on a test set:
 
 ```bash
-python evaluate.py
+python evaluate.py --data path/to/your_dataset.h5ad
 ```
 
 Results are printed to the console and logged to ClearML if it is
@@ -59,7 +59,7 @@ configured.
 ## Running ad‑hoc inference
 
 ```bash
-python infer.py
+python infer.py --data path/to/your_dataset.h5ad
 ```
 
 This loads the saved model and prints predictions for a random subset of
