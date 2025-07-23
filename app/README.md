@@ -14,9 +14,11 @@ the workflow and forwards requests to that MCP endpoint (default
 
 ## Running
 
-Install the required packages:
+Install the required packages (base dependencies come from the project
+root):
 
 ```bash
+pip install -r ../requirements.txt
 pip install -r requirements.txt
 ```
 
