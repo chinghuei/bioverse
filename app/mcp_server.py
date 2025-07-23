@@ -10,7 +10,6 @@ forward pass. This keeps latency low and avoids repeated initialisation.
 from pathlib import Path
 from typing import List
 
-import numpy as np
 import torch
 import scanpy as sc
 from fastapi import FastAPI
