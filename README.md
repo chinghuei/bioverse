@@ -79,3 +79,7 @@ python mcp_server.py     # optional: start the FastAPI server on port 8000
 
 Open <http://localhost:8051> in your browser to interact with the demo.
 
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
