@@ -9,7 +9,6 @@ import requests
 from typing import List
 import plotly.express as px
 import scanpy as sc
-import numpy as np
 
 # ✅ Updated import based on current Langflow structure
 from langflow.load import load_flow_from_json
