@@ -3,6 +3,7 @@
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 from tqdm import tqdm
 from clearml import Logger, Task
+import torch
 from torch import autocast
 from .utils import inject_and_tokenize
 

@@ -9,7 +9,6 @@ from mammal.keys import (
     ENCODER_INPUTS_ATTENTION_MASK,
 )
 from abc import ABC, abstractmethod
-from .constants import num_bio_tokens
 
 
 def load_AnnData_from_file(h5ad_path, use_subset=False):

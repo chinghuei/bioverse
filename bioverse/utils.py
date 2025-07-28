@@ -3,8 +3,6 @@
 import torch
 from .constants import (
     TRAINABLE_BIO_TOKEN,
-    BIO_START_TOKEN,
-    BIO_END_TOKEN,
     ANSWER_TOKEN,
 )
 
