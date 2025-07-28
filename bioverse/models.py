@@ -6,7 +6,6 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import get_peft_model, LoraConfig, TaskType
 from mammal.model import Mammal
 from fuse.data.tokenizers.modular_tokenizer.op import ModularTokenizerOp
-from .constants import num_bio_tokens
 
 
 def loadMammal(model_path, device):
