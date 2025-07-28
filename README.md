@@ -11,20 +11,21 @@ The main entry points are:
 * `infer.py` – run inference on random samples of the dataset.
 * `app/` – small Dash demo and FastAPI inference server.
 
-The instructions below assume a Unix‑like environment with Python 3.9+
+The instructions below assume a Unix‑like environment with **Python 3.9–3.11**
 installed.
 
 ## Installation
 
-1. Create a virtual environment and activate it:
+1. Create a virtual environment with your preferred Python (>=3.9) and activate
+   it:
 
    ```bash
    python -m venv venv
    source venv/bin/activate
    ```
 
-2. Install the dependencies. Some packages are heavy so this may take a
-   while:
+2. Install the dependencies listed in `requirements.txt` (this may take a
+   while as PyTorch and Scanpy download sizeable wheels):
 
    ```bash
    pip install -r requirements.txt
