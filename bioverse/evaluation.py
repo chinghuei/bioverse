@@ -3,6 +3,7 @@
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 from tqdm import tqdm
 from clearml import Logger, Task
+import torch
 from torch import autocast
 from .utils import inject_and_tokenize
 
@@ -39,7 +40,9 @@ def evaluate_model(
                     labels=None,
                     bio_embeddings=bio_embeddings,
                     adapter=projection_layer,
-                    trainable_bio_token_embedding=trainable_bio_token_embedding,
+                    trainable_bio_token_embedding=(
+                        trainable_bio_token_embedding
+                    ),
                     device=device,
                 )
                 outputs = llm_model.generate(
@@ -56,9 +59,12 @@ def evaluate_model(
             decoded_truths = [t.strip().lower() for t in labels]
 
             # Print each prediction alongside its ground truth label
-            for i, (pred, true) in enumerate(zip(decoded_preds, decoded_truths)):
+            for i, (pred, true) in enumerate(
+                zip(decoded_preds, decoded_truths)
+            ):
                 print(
-                    f"[{batch_idx * dataloader.batch_size + i + 1}] pred: {pred:<30} | truth: {true}"
+                    f"[{batch_idx * dataloader.batch_size + i + 1}] "
+                    f"pred: {pred:<30} | truth: {true}"
                 )
 
             preds.extend(decoded_preds)
@@ -77,9 +83,19 @@ def evaluate_model(
         from sklearn.metrics import ConfusionMatrixDisplay
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(10, 10))
-        ConfusionMatrixDisplay.from_predictions(truths, preds, ax=ax, xticks_rotation=45)
+        ConfusionMatrixDisplay.from_predictions(
+            truths,
+            preds,
+            ax=ax,
+            xticks_rotation=45,
+        )
         plt.title("Confusion Matrix")
-        task.logger.report_matplotlib_figure("ConfusionMatrix", "Eval", iteration=0, figure=fig)
+        task.logger.report_matplotlib_figure(
+            "ConfusionMatrix",
+            "Eval",
+            iteration=0,
+            figure=fig,
+        )
         plt.show()
     except Exception as e:
         print(f"Could not display confusion matrix: {e}")
